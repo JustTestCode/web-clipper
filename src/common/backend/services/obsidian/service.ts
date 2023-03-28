@@ -1,45 +1,31 @@
-import { CompleteStatus, HttpError, UnauthorizedError } from './../interface';
+import { CompleteStatus } from './../interface';
 import { DocumentService, CreateDocumentRequest } from '../../index';
-import axios, { AxiosInstance } from 'axios';
 import { ObsidianBackendServiceConfig } from './interface';
 function pathJoin(parts: string[], separator: string = '/') {
   let replace = new RegExp(`${separator}{1,}`, 'g');
   return parts.join(separator).replace(replace, separator);
 }
 export default class ObsidianDocumentService implements DocumentService {
-  private request: AxiosInstance;
-
-  constructor(private config: ObsidianBackendServiceConfig) {
-    const request = axios.create({
-      baseURL: config.endPoint ?? 'http://127.0.0.1:27123',
-      timeout: 10000,
-      headers: {
-        Authorization: config.accessToken ? `Bearer ${config.accessToken}` : '',
-      },
-    });
-    this.request = request;
-    this.request.interceptors.response.use(
-      r => r,
-      error => {
-        if (!axios.isAxiosError(error)) {
-          return Promise.reject(error);
-        }
-        if (error.response?.status === 401) {
-          return Promise.reject(new UnauthorizedError(error.response.data.message));
-        }
-        if (error.response?.data?.errorCode) {
-          return Promise.reject(
-            new HttpError({
-              status: error.response.data.errorCode,
-              message: error.response.data.message,
-            })
-          );
-        }
-        return Promise.reject(error);
-      }
-    );
+  private config: ObsidianBackendServiceConfig;
+  constructor(config: ObsidianBackendServiceConfig) {
+    this.config = config;
   }
+  copyToClipboard = (text: string) => {
+    function oncopy(event: any) {
+      document.removeEventListener('copy', oncopy, true);
+      // Hide the event from the page to prevent tampering.
+      event.stopImmediatePropagation();
 
+      // Overwrite the clipboard content.
+      event.preventDefault();
+      event.clipboardData.setData('text/plain', text);
+      // event.clipboardData.setData("text/html", html);
+    }
+    document.addEventListener('copy', oncopy, true);
+
+    // Requires the clipboardWrite permission, or a user gesture:
+    document.execCommand('copy');
+  };
   getId = () => {
     return 'obsidian';
   };
@@ -55,25 +41,10 @@ export default class ObsidianDocumentService implements DocumentService {
     ];
   };
 
-  createDocument = async ({
-    url,
-    title,
-    content,
-  }: CreateDocumentRequest): Promise<CompleteStatus> => {
+  createDocument = async ({ title, content }: CreateDocumentRequest): Promise<CompleteStatus> => {
     const fullPath = pathJoin([this.config.directory ?? '', `${title}.md`]);
-    await this.request.put(
-      `/vault/${encodeURIComponent(fullPath)}`,
-      `---
-source: ${url}
----
-${content}
-`,
-      {
-        headers: {
-          'Content-type': 'text/markdown',
-        },
-      }
-    );
+    this.copyToClipboard(content);
+    window.location.href = `obsidian://advanced-uri?vault=${this.config.valutName}&clipboard=true&mode=new&filepath=${fullPath}`;
     return {
       href: `obsidian://open?file=${encodeURIComponent(title)}`,
     };
@@ -81,13 +52,11 @@ ${content}
 
   getUserInfo = async () => {
     // 先请求下, 确保接能通
-    await this.request.get('/vault/');
-
     return {
       name: 'Obsidian',
       avatar: 'https://avatars.githubusercontent.com/u/65011256?s=200&v=4',
       homePage: 'https://obsidian.md',
-      description: `send to obsidian 
+      description: `send to obsidian
 by obsidian-local-rest-api`,
     };
   };

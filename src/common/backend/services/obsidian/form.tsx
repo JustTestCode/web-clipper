@@ -18,43 +18,23 @@ const ConfigForm: React.FC<FormProps> = ({ form: { getFieldDecorator }, info, ve
     <Fragment>
       <Form.Item
         label={
-          <FormattedMessage id="backend.services.obsidian.localRestToken" defaultMessage="Token" />
+          <FormattedMessage id="backend.services.obsidian.valutName" defaultMessage="valutName" />
         }
       >
-        {getFieldDecorator('accessToken', {
-          initialValue: info?.accessToken,
+        {getFieldDecorator('valutName', {
+          initialValue: info?.valutName,
           rules: [
             {
               required: true,
               message: (
                 <FormattedMessage
-                  id="backend.services.obsidian.localRestToken.message"
-                  defaultMessage="please enter token"
+                  id="backend.services.obsidian.valutName.message"
+                  defaultMessage="please enter valut name"
                 />
               ),
             },
           ],
         })(<Input disabled={disabled} />)}
-      </Form.Item>
-      <Form.Item
-        label={
-          <FormattedMessage id="backend.services.obsidian.endpoint" defaultMessage="Api endpoint" />
-        }
-      >
-        {getFieldDecorator('endpoint', {
-          initialValue: info?.endPoint,
-          rules: [
-            {
-              required: false,
-              message: (
-                <FormattedMessage
-                  id="backend.services.obsidian.endpoint.message"
-                  defaultMessage="please enter endpoint"
-                />
-              ),
-            },
-          ],
-        })(<Input placeholder="http://127.0.0.1:27123" />)}
       </Form.Item>
       <Form.Item
         label={
