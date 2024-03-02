@@ -43,7 +43,16 @@ export default class ObsidianDocumentService implements DocumentService {
 
   createDocument = async ({ title, content }: CreateDocumentRequest): Promise<CompleteStatus> => {
     const fullPath = pathJoin([this.config.directory ?? '', `${title}.md`]);
-    this.copyToClipboard(content);
+    let info:string=`---
+    title: ${title}
+    url: ${window.location.href}
+    ---
+
+    `
+
+
+
+    this.copyToClipboard(info+content);
     window.location.href = `obsidian://advanced-uri?vault=${this.config.valutName}&clipboard=true&mode=new&filepath=${fullPath}`;
     return {
       href: `obsidian://open?file=${encodeURIComponent(title)}`,
